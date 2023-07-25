@@ -1,0 +1,79 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+File1=Layout1.bjl
+FileGroup1=Default Group
+Group=Default Group
+Library1=jcore
+Library2=jfx
+Library3=jshell
+Library4=jstringfunctions
+Library5=jxui
+NumberOfFiles=1
+NumberOfLibraries=5
+NumberOfModules=0
+Version=9.8
+@EndOfDesignText@
+#Region Project Attributes
+    #MainFormWidth: 600
+    #MainFormHeight: 600
+#End Region
+
+
+Sub Process_Globals
+	Private fx As JFX
+	Private MainForm As Form
+	Private xui As XUI
+	Private Button1 As B4XView
+	Public Success As String = ""
+	Public filename As String
+
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	MainForm = Form1
+	MainForm.RootPane.LoadLayout("Layout1")
+	MainForm.Show
+	
+End Sub
+
+Sub Button1_Click
+	Dim fileChooser As FileChooser
+	fileChooser.Initialize
+	fileChooser.Title = "Choose file"
+	fileChooser.SetExtensionFilter("Rich Text Format", Array("*.rtf", "*.RTF"))
+	
+	Success = fileChooser.ShowOpen(MainForm)
+
+	If Success.Length > 0 Then
+		fileChooser_Result(True)
+	End If
+	
+End Sub
+
+Sub fileChooser_Result (Successs As Boolean)
+	If Successs = True Then
+		Dim ff As JStringFunctions
+		ff.Initialize
+		Dim inputPath As String = Success
+		Dim outputPath As String = ff.Stuff(Success, "pdf", "rtf")
+		Dim Shell As Shell
+		Try
+			' Convert RTF to PDF using Pandoc
+			Dim pandocExecutable As String = "<C:\Users\Devel\Desktop\Demo Work\Pandoc\pandoc.exe>"
+			Dim pandocArguments As String = "-f rtf -t pdf -o """ & outputPath & """ """ & inputPath & """"
+
+			Shell.Initialize("PandocShell", pandocExecutable, Array(pandocArguments))
+
+			' Wait for the Shell_Completed event to be triggered
+			Wait For (Shell) Shell_Completed (Successs As Boolean)
+            
+			If Successs Then
+				xui.MsgboxAsync("Conversion completed." & CRLF & "Output file: " & outputPath, "Conversion Completed")
+			Else
+				xui.MsgboxAsync("An error occurred during conversion.", "Conversion Error")
+			End If
+		Catch
+			xui.MsgboxAsync("An error occurred during conversion.", "Conversion Error")
+		End Try
+	End If
+End Sub
